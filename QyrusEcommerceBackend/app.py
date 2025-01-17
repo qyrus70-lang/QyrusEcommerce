@@ -1,10 +1,16 @@
 from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from datetime import datetime
+
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import uuid
 import uvicorn
-
+import traceback
+from product_db import products_db, product_categories
+from collections import defaultdict
 app = FastAPI()
 
 # Add CORS middleware
@@ -26,30 +32,60 @@ app.add_middleware(
 users_db = {"admin@qyrus.com": {"password": "Qyrus@321"}}
 verification_tokens = {}
 password_reset_tokens = {}
-
-placeholder_image = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1280px-Placeholder_view_vector.svg.png"
-
-# Product categories and subcategories
-product_categories = {
-    "Men": ["T-Shirts", "Jeans", "Shirts"],
-    "Women": ["Dresses", "Tops", "Skirts"],
-    "Kids": ["Toys", "Clothing", "Books"],
-    "Accessories": ["Watches", "Bags", "Jewelry"]
+account_details_db = {}
+addresses_db = {}
+cart_db = {}
+favorites_db = {}
+orders_db = {}
+account_details_db["admin@qyrus.com"] = {
+    "name": "Admin User",
+    "age": 30,
+    "country": "India",
+    "phone": "1234567890"
 }
 
-products_db = [
-    {"id": 1, "name": "Men's T-Shirt", "price": 100, "image": "image1.jpg", "category": "Men", "subcategory": "T-Shirts", "sizes": ["S", "M", "L"], "colors": [{"name": "Red", "hex": "#FF0000"}, {"name": "Blue", "hex": "#0000FF"}], "providers": ["Provider A"]},
-    {"id": 2, "name": "Women's Dress", "price": 200, "image": "image2.jpg", "category": "Women", "subcategory": "Dresses", "sizes": ["M", "L"], "colors": [{"name": "Black", "hex": "#000000"}, {"name": "Green", "hex": "#008000"}], "providers": ["Provider B"]},
-    {"id": 3, "name": "Kid's Toy", "price": 150, "image": "image3.jpg", "category": "Kids", "subcategory": "Toys", "sizes": ["M", "L"], "colors": [{"name": "Yellow", "hex": "#FFFF00"}], "providers": ["Provider C"]},
-    {"id": 4, "name": "Men's Jeans", "price": 300, "image": "image4.jpg", "category": "Men", "subcategory": "Jeans", "sizes": ["M", "L", "XL"], "colors": [{"name": "Blue", "hex": "#0000FF"}], "providers": ["Provider A"]},
-    {"id": 5, "name": "Women's Top", "price": 120, "image": "image5.jpg", "category": "Women", "subcategory": "Tops", "sizes": ["S", "M"], "colors": [{"name": "Pink", "hex": "#FFC0CB"}], "providers": ["Provider B"]},
-    {"id": 6, "name": "Kid's Book", "price": 80, "image": "image6.jpg", "category": "Kids", "subcategory": "Books", "sizes": ["M", "L"], "colors": [{"name": "Black", "hex": "#000000"}, {"name": "Green", "hex": "#008000"}], "providers": ["Provider C"]}
-]
+class CreateOrderRequest(BaseModel):
+    email: EmailStr
+    addressId: str
+    products: list
+    paymentMethod: str
 
+class CancelOrderRequest(BaseModel):
+    email: EmailStr
+    orderId: str
+
+class AddFavoriteInput(BaseModel):
+    email: EmailStr
+    product_id: int
+
+class AddToCartRequest(BaseModel):
+    email: EmailStr
+    product_id: int
+    color: str
+    provider: str
+    size: str
+    quantity: int
+
+class CreateAddressRequest(BaseModel):
+    email: EmailStr
+    address: str
+
+class DeleteAddressRequest(BaseModel):
+    email: EmailStr
+    addressId: str
+
+class UpdateAddressRequest(BaseModel):
+    email: EmailStr
+    addressId: str
+    newAddress: str
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class RecordContactRequest(BaseModel):
+    email: EmailStr
+    comments: str
 
 class SignupRequest(BaseModel):
     email: EmailStr
@@ -67,6 +103,13 @@ class ResetPasswordRequest(BaseModel):
     otp: str
     token: str
 
+class UpdateAccountDetailsRequest(BaseModel):
+    email: EmailStr
+    name: str
+    phone: str
+    age: int
+    country: str
+
 @app.post("/auth/login")
 def login(request: LoginRequest):
     user = users_db.get(request.email)
@@ -82,6 +125,16 @@ def signup(request: SignupRequest):
         "password": request.password,
         "verified": False
     }
+
+
+    # Initialize empty account details
+    account_details_db[request.email] = {
+        "name": "",
+        "age": "",
+        "country": "",
+        "phone": ""
+    }
+
     # Generate verification token (mocked)
     token = str(uuid.uuid4())
     verification_tokens[token] = {
@@ -123,9 +176,13 @@ def reset_password(request: ResetPasswordRequest):
     raise HTTPException(status_code=400, detail="Invalid OTP or token")
 
 @app.get("/get-products/")
-def get_products(category: str = Query(...), page: int = Query(...)):
-    filtered_products = [p for p in products_db if p["category"] == category]
-    page_size = 2
+def get_products(category: str = Query(...), subcategory: Optional[str] = Query(None), page: int = Query(...)):
+    if subcategory in [None, "none"]:
+        filtered_products = [p for p in products_db if p["category"] == category]
+    else:
+        filtered_products = [p for p in products_db if p["category"] == category and p["subcategory"] == subcategory]
+
+    page_size = 15
     start = (page - 1) * page_size
     end = start + page_size
     total_pages = (len(filtered_products) + page_size - 1) // page_size
@@ -147,8 +204,9 @@ def get_product_categories():
         "categories": product_categories
     }
 
-@app.get("/get-product-details/")
-def get_product_details(product_id: int = Query(...)):
+@app.get("/get-product-details/{product_id}")
+def get_product_details(product_id: int):
+
     product = next((p for p in products_db if p["id"] == product_id), None)
     if product:
         return {
@@ -160,8 +218,366 @@ def get_product_details(product_id: int = Query(...)):
             "subcategory": product["subcategory"],
             "sizes": product.get("sizes"),
             "colors": product.get("colors"),
-            "providers": product.get("providers")
+            "providers": product.get("providers"),
+            "description": product.get("description"),
+            "rating": product.get("rating"),
+            "comments": product.get("comments")
         }
     raise HTTPException(status_code=404, detail="Product not found")
+
+@app.get("/get-account-details/")
+def get_account_details(email: EmailStr):
+    account_details = account_details_db.get(email)
+    if account_details is not None:
+        return {
+            "email": email,
+            **account_details
+        }
+    raise HTTPException(status_code=404, detail="Account details not found")
+
+@app.post("/update-account-details/")
+def update_account_details(request: UpdateAccountDetailsRequest):
+    # Check if the user exists
+    account_details = account_details_db.get(request.email)
+    if account_details is not None:
+        # Update account details
+        account_details_db[request.email] = {
+            "name": request.name,
+            "phone": request.phone,
+            "age": request.age,
+            "country": request.country
+        }
+        return {
+            "message": "Account details updated successfully",
+            "updated_details": account_details_db[request.email]
+        }
+    raise HTTPException(status_code=404, detail="Account not found")
+
+
+@app.post("/add-to-cart")
+def add_to_cart(request: AddToCartRequest):
+    # Check if the user exists
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if product exists
+    product = next((p for p in products_db if p["id"] == request.product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Initialize user's cart if not already present
+    if request.email not in cart_db:
+        cart_db[request.email] = []
+    
+    # Add item to the user's cart
+    cart_item = {
+        "cart_item_id": str(uuid.uuid4()),
+        "product_id": request.product_id,
+        "color": request.color,
+        "provider": request.provider,
+        "size": request.size,
+        "quantity": request.quantity
+    }
+    cart_db[request.email].append(cart_item)
+    
+    return {
+        "message": "Item added to cart successfully",
+        "cart": cart_db[request.email]
+    }
+
+@app.post("/record-contact/")
+def record_contact(request: RecordContactRequest):
+    # Print the comments to the console
+    print(f"Contact recorded from {request.email}: {request.comments}")
+    
+    # Return a success message
+    return {
+        "message": "Contact recorded successfully",
+        "email": request.email
+    }
+
+
+@app.get("/get-cart/")
+def get_cart(email: EmailStr):
+    # Check if the user exists
+    if email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get the user's cart
+    user_cart = cart_db.get(email, [])
+    
+    # Fetch detailed product info for each cart item
+    detailed_cart = []
+    for item in user_cart:
+        product = next((p for p in products_db if p["id"] == item["product_id"]), None)
+        if product:
+            detailed_cart.append({
+                "cart_item_id": item["cart_item_id"],
+                "product_id": product["id"],
+                "name": product["name"],
+                "price": product["price"],
+                "image": product["image"],  # Include the image field
+                "color": item["color"],
+                "provider": item["provider"],
+                "size": item["size"],
+                "quantity": item["quantity"]
+            })
+    
+    return {
+        "email": email,
+        "cart": detailed_cart
+    }
+
+
+@app.delete("/remove-from-cart/")
+async def remove_from_cart(request: Request):
+    body = await request.json()
+    email = body.get("email")
+    cart_item_id = body.get("cart_item_id")
+
+    # Validate email
+    if email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Validate cart exists
+    user_cart = cart_db.get(email, [])
+    if not user_cart:
+        raise HTTPException(status_code=404, detail="Cart is empty")
+
+    # Remove the item with the given cart_item_id
+    updated_cart = [item for item in user_cart if item["cart_item_id"] != cart_item_id]
+
+    # Check if an item was removed
+    if len(updated_cart) == len(user_cart):
+        raise HTTPException(status_code=404, detail="Cart item not found")
+
+    # Update the cart
+    cart_db[email] = updated_cart
+
+    return {
+        "message": "Item removed from cart successfully",
+        "cart": cart_db[email]
+    }
+
+
+@app.post("/add-favorite/")
+def add_favorite(request: AddFavoriteInput):
+    # Check if the user exists
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if the product exists
+    product = next((p for p in products_db if p["id"] == int(request.product_id)), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Initialize the user's favorites if not already present
+    if request.email not in favorites_db:
+        favorites_db[request.email] = set()
+    
+    # Add the product to the user's favorites
+    favorites_db[request.email].add(request.product_id)
+    
+    return {
+        "message": "Product added to favorites successfully",
+        "favorites": list(favorites_db[request.email])
+    }
+
+@app.get("/get-favorites/")
+def get_favorites(email: EmailStr):
+    # Check if the user exists
+    if email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get the user's favorites
+    user_favorites = favorites_db.get(email, set())
+    
+    return {
+        "email": email,
+        "favorites": list(user_favorites)
+    }
+
+@app.delete("/remove-favorite/")
+def remove_favorite(request: AddFavoriteInput):
+    # Check if the user exists
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the user has favorites, otherwise raise a 404
+    if request.email not in favorites_db:
+        raise HTTPException(status_code=404, detail="No favorites found for this user")
+
+    # Check if the product exists in the user's favorites
+    if request.product_id not in favorites_db[request.email]:
+        raise HTTPException(status_code=404, detail="Product not found in favorites")
+
+    # Remove the product from the user's favorites
+    favorites_db[request.email].remove(request.product_id)
+
+    return {
+        "message": "Product removed from favorites successfully",
+        "favorites": list(favorites_db[request.email])
+    }
+
+
+@app.post("/create-address/")
+def create_address(request: CreateAddressRequest):
+    # Validate user
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Generate a unique address ID
+    address_id = str(uuid.uuid4())
+    
+    # Add the address to the user's address list
+    if request.email not in addresses_db:
+        addresses_db[request.email] = []
+    
+    addresses_db[request.email].append({
+        "address_id": address_id,
+        "address": request.address
+    })
+    
+    return {
+        "message": "Address added successfully",
+        "address_id": address_id,
+        "addresses": addresses_db[request.email]
+    }
+
+@app.get("/get-addresses/")
+def get_addresses(email: EmailStr):
+    # Validate user
+    if email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get addresses
+    user_addresses = addresses_db.get(email, [])
+    
+    return {
+        "email": email,
+        "addresses": user_addresses
+    }
+
+@app.delete("/delete-address/")
+async def delete_address(request: Request):
+    body = await request.json()
+    email = body.get("email")
+    address_id = body.get("addressId")
+    
+    # Validate user
+    if email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user's addresses
+    user_addresses = addresses_db.get(email, [])
+    
+    # Find and delete the address
+    updated_addresses = [addr for addr in user_addresses if addr["address_id"] != address_id]
+    
+    if len(updated_addresses) == len(user_addresses):
+        raise HTTPException(status_code=404, detail="Address not found")
+    
+    addresses_db[email] = updated_addresses
+    
+    return {
+        "message": "Address deleted successfully",
+        "addresses": addresses_db[email]
+    }
+
+@app.put("/update-address/")
+def update_address(request: UpdateAddressRequest):
+    # Validate user
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user's addresses
+    user_addresses = addresses_db.get(request.email, [])
+    
+    # Find and update the address
+    for addr in user_addresses:
+        if addr["address_id"] == request.addressId:
+            addr["address"] = request.newAddress
+            return {
+                "message": "Address updated successfully",
+                "addresses": user_addresses
+            }
+    
+    raise HTTPException(status_code=404, detail="Address not found")
+
+
+@app.post("/create-order/")
+def create_order(request: CreateOrderRequest):
+    # Validate user
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Validate address
+    user_addresses = addresses_db.get(request.email, [])
+    if not any(addr["address_id"] == request.addressId for addr in user_addresses):
+        raise HTTPException(status_code=404, detail="Address not found")
+
+    # Validate products
+    for product in request.products:
+        if not any(p["id"] == int(product["productId"]) for p in products_db):
+            raise HTTPException(status_code=404, detail=f"Product with ID {product['productId']} not found")
+
+    # Generate a unique order ID
+    order_id = str(uuid.uuid4())
+
+    # Create the order
+    if request.email not in orders_db:
+        orders_db[request.email] = []
+
+    orders_db[request.email].append({
+        "order_id": order_id,
+        "address_id": request.addressId,
+        "products": request.products,
+        "payment_method": request.paymentMethod,
+        "status": "confirmed",
+        "created_at": datetime.utcnow().isoformat()
+    })
+
+    return {
+        "message": "Order created successfully",
+        "order_id": order_id,
+        "order_status": "confirmed"
+    }
+
+@app.get("/get-orders/")
+def get_orders(email: EmailStr):
+    # Validate user
+    if email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get orders for the user
+    user_orders = orders_db.get(email, [])
+
+    return {
+        "email": email,
+        "orders": user_orders
+    }
+
+@app.post("/cancel-order/")
+def cancel_order(request: CancelOrderRequest):
+    # Validate user
+    if request.email not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Validate order
+    user_orders = orders_db.get(request.email, [])
+    for order in user_orders:
+        if order["order_id"] == request.orderId:
+            if order["status"] == "cancelled":
+                raise HTTPException(status_code=400, detail="Order already cancelled")
+            order["status"] = "cancelled"
+            return {
+                "message": "Order cancelled successfully",
+                "order_id": request.orderId,
+                "order_status": "cancelled"
+            }
+
+    raise HTTPException(status_code=404, detail="Order not found")
+
+
 if __name__ == "__main__":
     uvicorn.run('app:app', port=8888, reload=True)    

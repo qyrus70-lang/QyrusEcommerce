@@ -1,4 +1,4 @@
-// src/components/Login.jsx
+// src/components/Auth.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
@@ -20,7 +20,8 @@ const Login = () => {
     try {
       const { data } = await authAPI.login(email, password);
       localStorage.setItem('token', data.token);
-      login(); // Update global login state
+      // localStorage.setItem('username', email);
+      login(email); // Update global login state
       navigate('/products'); // Redirect to products page
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

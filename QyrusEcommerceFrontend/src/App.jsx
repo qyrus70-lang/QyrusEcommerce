@@ -7,6 +7,14 @@ import Header from './components/Header';
 import Cart from './components/Cart';
 import UserProvider from './context/UserContext';
 import ProductDetails from './components/ProductDetails';
+import AccountPage from './components/AccountPage';
+import Wishlist from "./components/Wishlist";
+import ContactUs from "./components/ContactUs";
+import MyAddress from "./components/MyAddress";
+import AddressSelection from "./components/BuyNow";
+import PaymentPage from "./components/PaymentsPage";
+import MyOrders from "./components/MyOrders";
+
 
 const App = () => {
   return (
@@ -21,6 +29,15 @@ const App = () => {
         <Route path="/" element={<Navigate to="/products" replace />} />
         <Route path="/product/:productId" element={<ProductDetails />} /> {/* Product Details Route */}
         <Route path="/cart" element={<Cart />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/my-address" element={<MyAddress />} />
+
+        <Route path="/buy-now" element={<AddressSelection />} />
+        <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/my-orders" element={<MyOrders />} />
+
       </Routes>
     </Router>
     </UserProvider>
