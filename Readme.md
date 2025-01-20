@@ -11,3 +11,5 @@ clone the repo and go the directory
 ```
 
 ----
+
+## RUN VIA DOCKER
