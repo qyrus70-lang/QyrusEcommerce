@@ -9,7 +9,7 @@ jobs:
   send_code_changes:
     runs-on: ubuntu-latest
 
-      steps:
+    steps:
       # Step 1: Checkout the code with full history
       - name: Checkout code
         uses: actions/checkout@v3
