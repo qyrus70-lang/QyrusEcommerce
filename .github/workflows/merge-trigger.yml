@@ -1,0 +1,39 @@
+name: Send Code Changes on Merge
+
+on:
+  push:
+    branches:
+      - main  # Replace with the branch you want to monitor for merges
+
+jobs:
+  send_code_changes:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Get the list of changes
+      - name: Get code changes
+        id: code_changes
+        run: |
+          # Get the last two commits for comparison
+          PREV_SHA=$(git rev-parse HEAD~1)
+          CURRENT_SHA=$(git rev-parse HEAD)
+
+          # Get the diff and save it to a file
+          git diff --name-status $PREV_SHA $CURRENT_SHA > changes.txt
+          git diff $PREV_SHA $CURRENT_SHA > full_diff.txt
+
+          # Export changes as an environment variable for the API
+          echo "changes=$(cat changes.txt)" >> $GITHUB_ENV
+
+      # Step 3: Send the code changes to your API
+      - name: Send changes to API
+        env:
+          CHANGES: ${{ env.changes }}
+          API_URL: https://testui-qyrusbot.quinnox.info/flux/analyze-test-impact/
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"branch": "main", "changes": "'"$CHANGES"'"}' $API_URL
