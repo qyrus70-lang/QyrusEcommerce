@@ -47,5 +47,15 @@ jobs:
           CHANGES: ${{ env.changes }}
           API_URL: https://testui-qyrusbot.quinnox.info/flux/analyze-test-impact/
         run: |
+          # Escape the changes string
+          ESCAPED_CHANGES=$(echo "$CHANGES" | jq -Rs .)
+          
+          # Construct the JSON payload
+          PAYLOAD=$(jq -n \
+            --arg branch "main" \
+            --arg changes "$ESCAPED_CHANGES" \
+            '{"branch": $branch, "changes": $changes}')
+          
+          # Send the API request
           curl -X POST -H "Content-Type: application/json" \
-            -d '{"branch": "main", "changes": "'"$CHANGES"'"}' $API_URL
+            -d "$PAYLOAD" $API_URL
