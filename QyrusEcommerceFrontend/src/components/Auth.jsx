@@ -292,7 +292,7 @@ const ForgotPassword = () => {
         
         <div className="text-center">
           <Link to="/login" className="text-blue-600 hover:underline">
-            Back to Login
+            Back-to-Login
           </Link>
         </div>
       </div>

@@ -108,9 +108,9 @@ const AddressSelection = () => {
         <button
           disabled={!selectedAddressId}
           onClick={handleNext}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          Next
+          Next 
         </button>
       </div>
 
