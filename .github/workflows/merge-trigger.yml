@@ -9,27 +9,39 @@ jobs:
   send_code_changes:
     runs-on: ubuntu-latest
 
-    steps:
-      # Step 1: Check out the repository
+      steps:
+      # Step 1: Checkout the code with full history
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensure full history is fetched
 
-      # Step 2: Get the list of changes
-      - name: Get code changes
+      # Step 2: Debug the commit history
+      - name: Debug Commit History
+        run: |
+          git log --oneline
+          git rev-parse HEAD
+
+      # Step 3: Get the code changes
+      - name: Get Code Changes
         id: code_changes
         run: |
-          # Get the last two commits for comparison
-          PREV_SHA=$(git rev-parse HEAD~1)
+          if [ $(git rev-list --count HEAD) -eq 1 ]; then
+            echo "Only one commit in history. Using HEAD for changes."
+            PREV_SHA=$(git rev-parse HEAD)
+          else
+            PREV_SHA=$(git rev-parse HEAD~1)
+          fi
           CURRENT_SHA=$(git rev-parse HEAD)
 
           # Get the diff and save it to a file
           git diff --name-status $PREV_SHA $CURRENT_SHA > changes.txt
           git diff $PREV_SHA $CURRENT_SHA > full_diff.txt
 
-          # Export changes as an environment variable for the API
+          # Export changes as an environment variable for API call
           echo "changes=$(cat changes.txt)" >> $GITHUB_ENV
 
-      # Step 3: Send the code changes to your API
+      # Step 4: Send the code changes to your API
       - name: Send changes to API
         env:
           CHANGES: ${{ env.changes }}
