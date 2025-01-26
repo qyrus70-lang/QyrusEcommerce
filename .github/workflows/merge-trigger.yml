@@ -44,7 +44,11 @@ jobs:
         id: code_changes
         run: |
           # Calculate the cumulative diff for all commits in the push
-          git diff HEAD~$(git rev-list --count HEAD) HEAD > changes.txt
+          # Use the total count if we're pushing fewer commits than there are in total, otherwise use the new commits count
+          DIFF_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+
+          # Calculate the diff using the determined range
+          git diff HEAD~$DIFF_RANGE HEAD > changes.txt
 
           # Encode the changes to safely export as an environment variable
           ENCODED_CHANGES=$(cat changes.txt | jq -Rs .)
