@@ -13,6 +13,10 @@ clone the repo and go the directory
 
 Backend:
 ```
+cd CodeFluxProducer
+python app.py
+
+cd CodeFluxConsumer
 python app.py
 ```
 
