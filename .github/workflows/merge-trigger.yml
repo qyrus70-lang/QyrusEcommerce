@@ -20,8 +20,18 @@ jobs:
       - name: Extract Commit Details
         id: commits
         run: |
+          
+          # Calculate the number of commits in the history
+          TOTAL_COMMITS=$(git rev-list --count HEAD)
+
+          # Calculate the number of new commits in the push
+          NEW_COMMITS_COUNT=$(git rev-list --count HEAD^..HEAD)
+
+          # Use the lesser of the total commits in the repo and the number of new commits for the range
+          COMMIT_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+
           # Get all commit hashes in this push
-          COMMITS=$(git rev-list --reverse HEAD~$(git rev-list --count HEAD)..HEAD)
+          COMMITS=$(git rev-list --reverse HEAD~$COMMIT_RANGE..HEAD)
           
           # Format commit details as a JSON array
           COMMITS_JSON=$(echo "$COMMITS" | jq -R -s -c 'split("\n")[:-1]')
