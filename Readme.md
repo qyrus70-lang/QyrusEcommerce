@@ -11,6 +11,11 @@ clone the repo and go the directory
 > npm run dev
 ```
 
+Backend:
+```
+python app.py
+```
+
 ----
 
 ## RUN VIA DOCKER
