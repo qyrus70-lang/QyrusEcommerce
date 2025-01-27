@@ -10,6 +10,12 @@ clone the repo and go the directory
 > npm i
 > npm run dev
 ```
+Create redis streams and store using docker compose
+
+```
+> cd redis
+>sudo docker compose up
+```
 
 Backend:
 ```
@@ -19,6 +25,8 @@ python app.py
 cd CodeFluxConsumer
 python app.py
 ```
+
+
 
 ----
 
