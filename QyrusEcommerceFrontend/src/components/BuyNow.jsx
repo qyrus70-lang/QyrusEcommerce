@@ -6,7 +6,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const AddressSelection = () => {
   const [addresses, setAddresses] = useState([]);
-  const [addresses1, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [newAddress, setNewAddress] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false)
