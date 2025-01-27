@@ -243,7 +243,7 @@ const ProductDetails = () => {
               }}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
-              Buy Now
+              Get It Now!
             </button>
 
             <button
