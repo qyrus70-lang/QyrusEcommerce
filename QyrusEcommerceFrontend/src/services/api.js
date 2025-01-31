@@ -20,23 +20,23 @@ api.interceptors.request.use((config) => {
 
 export const authAPI = {
   login: (email, password) => {
-    return api.post('/auth/login', { email, password });
+    return api.post('/auth/login/', { email, password });
   },
 
   signup: (email, password) => {
-    return api.post('/auth/signup', { email, password });
+    return api.post('/auth/signup/', { email, password });
   },
 
   verifyEmail: (otp, token) => {
-    return api.post('/auth/verify-email', { otp, token });
+    return api.post('/auth/verify-email/', { otp, token });
   },
 
   forgotPassword: (email) => {
-    return api.post('/auth/forgot-password', { email });
+    return api.post('/auth/forgot-password/', { email });
   },
 
   resetPassword: (newPassword, otp, token) => {
-    return api.post('/auth/reset-password', { 
+    return api.post('/auth/reset-password/', { 
       password: newPassword, 
       otp, 
       token 
@@ -45,12 +45,12 @@ export const authAPI = {
 
   // Get products by category and page
   getProducts: (category, subcategory, page) => {
-    return api.get('/get-products', { params: { category, subcategory, page } }); // Query params
+    return api.get('/get-products/', { params: { category, subcategory, page } }); // Query params
   },
 
   // Search products across all categories
   searchProducts: (query) => {
-    return api.get('/search-products', { params: { query } }); // Query param
+    return api.get('/search-products/', { params: { query } }); // Query param
   },
 
   getCategories: () => {
@@ -62,7 +62,7 @@ export const authAPI = {
   },
 
   addToCart: (email, productId, color, provider, size, quantity) => {
-    return api.post('/add-to-cart', {
+    return api.post('/add-to-cart/', {
       email,
       product_id: productId,
       color,
@@ -73,42 +73,42 @@ export const authAPI = {
   },
 
   getCart: (email) => {
-    return api.get('/get-cart', { params: {email} });
+    return api.get('/get-cart/', { params: {email} });
   },
 
   getAccountDetails: (email) => {
-    return api.get("/get-account-details", { params: { email } });
+    return api.get("/get-account-details/", { params: { email } });
   },
   
   updateAccountDetails: (email, details) => {
-    return api.post("/update-account-details", { email, ...details });
+    return api.post("/update-account-details/", { email, ...details });
   },
 
   removeFromCart: (email, cartItemId) => {
-    return api.delete('/remove-from-cart', {
+    return api.delete('/remove-from-cart/', {
       data: { email, cart_item_id: cartItemId }, // Email and cartItemId in the request body
     });
   },
 
   addFavorite: (email, productId) => {
-    return api.post('/add-favorite', {
+    return api.post('/add-favorite/', {
       email,
       product_id: productId,
     });
   },
 
   getFavorites: (email) => {
-    return api.get('/get-favorites', { params: { email } });
+    return api.get('/get-favorites/', { params: { email } });
   },
 
   removeFavorite: (email, productId) => {
-    return api.delete('/remove-favorite', {
+    return api.delete('/remove-favorite/', {
       data: { email, product_id: productId },
     });
   },
 
   recordContact: (email, comments) => {
-    return api.post('/record-contact', {
+    return api.post('/record-contact/', {
       email,
       comments,
     });
@@ -116,7 +116,7 @@ export const authAPI = {
 
   // Add a new address
 createAddress: (email, address) => {
-  return api.post('/create-address', {
+  return api.post('/create-address/', {
     email,
     address,
   });
@@ -124,21 +124,21 @@ createAddress: (email, address) => {
 
 // Get all addresses for a user
 getAddresses: (email) => {
-  return api.get('/get-addresses', {
+  return api.get('/get-addresses/', {
     params: { email },
   });
 },
 
 // Delete an address
 deleteAddress: (email, addressId) => {
-  return api.delete('/delete-address', {
+  return api.delete('/delete-address/', {
     data: { email, addressId },
   });
 },
 
 // Update an address
 updateAddress: (email, addressId, newAddress) => {
-  return api.put('/update-address', {
+  return api.put('/update-address/', {
     email,
     addressId,
     newAddress,
@@ -146,7 +146,7 @@ updateAddress: (email, addressId, newAddress) => {
 },
 
 createOrder: async (orderData) => {
-  return await api.post('/create-order', orderData);
+  return await api.post('/create-order/', orderData);
 },
 
 getOrders: async (email) => {
@@ -154,7 +154,7 @@ getOrders: async (email) => {
 },
 
 cancelOrder: async (orderId, email) => {
-  return await api.post("cancel-order", { orderId, email });
+  return await api.post("cancel-order/", { orderId, email });
 },
 
   
