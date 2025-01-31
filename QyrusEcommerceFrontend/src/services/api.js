@@ -150,7 +150,7 @@ createOrder: async (orderData) => {
 },
 
 getOrders: async (email) => {
-  return await api.get(`/get-orders?email=${email}`);
+  return await api.get(`/get-orders/?email=${email}`);
 },
 
 cancelOrder: async (orderId, email) => {
