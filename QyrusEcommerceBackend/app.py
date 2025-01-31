@@ -14,11 +14,7 @@ from collections import defaultdict
 app = FastAPI()
 
 # Add CORS middleware
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "*"
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
