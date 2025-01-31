@@ -54,7 +54,7 @@ export const authAPI = {
   },
 
   getCategories: () => {
-    return api.get('/get-product-categories'); // API call to fetch categories
+    return api.get('/get-product-categories/'); // API call to fetch categories
   },
 
   getProductDetails: (productId) => {
