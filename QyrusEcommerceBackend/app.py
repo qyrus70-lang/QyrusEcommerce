@@ -106,14 +106,14 @@ class UpdateAccountDetailsRequest(BaseModel):
     age: int
     country: str
 
-@app.post("auth/login")
+@app.post("/auth/login/")
 def login(request: LoginRequest):
     user = users_db.get(request.email)
     if user and user['password'] == request.password:
         return {"message": "Login successful"}
     raise HTTPException(status_code=401, detail="Invalid email or password")
 
-@app.post("auth/signup")
+@app.post("/auth/signup/")
 def signup(request: SignupRequest):
     if request.email in users_db:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -139,7 +139,7 @@ def signup(request: SignupRequest):
     }
     return {"message": "Signup successful. Please verify your email.", "token": token}
 
-@app.post("auth/verify-email")
+@app.post("/auth/verify-email/")
 def verify_email(request: VerifyEmailRequest):
     token_data = verification_tokens.get(request.token)
     if token_data and token_data["otp"] == request.otp:
@@ -149,7 +149,7 @@ def verify_email(request: VerifyEmailRequest):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=400, detail="Invalid OTP or token")
 
-@app.post("auth/forgot-password")
+@app.post("/auth/forgot-password/")
 def forgot_password(request: ForgotPasswordRequest):
     if request.email in users_db:
         # Generate password reset token (mocked)
@@ -161,7 +161,7 @@ def forgot_password(request: ForgotPasswordRequest):
         return {"message": "Password reset link sent to your email", "token": token}
     raise HTTPException(status_code=404, detail="Email not registered")
 
-@app.post("auth/reset-password")
+@app.post("/auth/reset-password/")
 def reset_password(request: ResetPasswordRequest):
     token_data = password_reset_tokens.get(request.token)
     if token_data and token_data["otp"] == request.otp:
@@ -171,7 +171,7 @@ def reset_password(request: ResetPasswordRequest):
         return {"message": "Password reset successfully"}
     raise HTTPException(status_code=400, detail="Invalid OTP or token")
 
-@app.get("get-products")
+@app.get("/get-products/")
 def get_products(category: str = Query(...), subcategory: Optional[str] = Query(None), page: int = Query(...)):
     if subcategory in [None, "none"]:
         filtered_products = [p for p in products_db if p["category"] == category]
@@ -187,20 +187,20 @@ def get_products(category: str = Query(...), subcategory: Optional[str] = Query(
         "total_pages": total_pages
     }
 
-@app.get("search-products")
+@app.get("/search-products/")
 def search_products(query: str = Query(...)):
     filtered_products = [p for p in products_db if query.lower() in p["name"].lower()]
     return {
         "products": filtered_products
     }
 
-@app.get("get-product-categories")
+@app.get("/get-product-categories/")
 def get_product_categories():
     return {
         "categories": product_categories
     }
 
-@app.get("get-product-details/{product_id}")
+@app.get("/get-product-details/{product_id}")
 def get_product_details(product_id: int):
 
     product = next((p for p in products_db if p["id"] == product_id), None)
@@ -221,7 +221,7 @@ def get_product_details(product_id: int):
         }
     raise HTTPException(status_code=404, detail="Product not found")
 
-@app.get("get-account-details")
+@app.get("/get-account-details/")
 def get_account_details(email: EmailStr):
     account_details = account_details_db.get(email)
     if account_details is not None:
@@ -231,7 +231,7 @@ def get_account_details(email: EmailStr):
         }
     raise HTTPException(status_code=404, detail="Account details not found")
 
-@app.post("update-account-details")
+@app.post("/update-account-details/")
 def update_account_details(request: UpdateAccountDetailsRequest):
     # Check if the user exists
     account_details = account_details_db.get(request.email)
@@ -250,7 +250,7 @@ def update_account_details(request: UpdateAccountDetailsRequest):
     raise HTTPException(status_code=404, detail="Account not found")
 
 
-@app.post("add-to-cart")
+@app.post("/add-to-cart/")
 def add_to_cart(request: AddToCartRequest):
     # Check if the user exists
     if request.email not in users_db:
@@ -281,7 +281,7 @@ def add_to_cart(request: AddToCartRequest):
         "cart": cart_db[request.email]
     }
 
-@app.post("record-contact")
+@app.post("/record-contact/")
 def record_contact(request: RecordContactRequest):
     # Print the comments to the console
     print(f"Contact recorded from {request.email}: {request.comments}")
@@ -293,7 +293,7 @@ def record_contact(request: RecordContactRequest):
     }
 
 
-@app.get("get-cart")
+@app.get("/get-cart/")
 def get_cart(email: EmailStr):
     # Check if the user exists
     if email not in users_db:
@@ -325,7 +325,7 @@ def get_cart(email: EmailStr):
     }
 
 
-@app.delete("remove-from-cart")
+@app.delete("/remove-from-cart/")
 async def remove_from_cart(request: Request):
     body = await request.json()
     email = body.get("email")
@@ -356,7 +356,7 @@ async def remove_from_cart(request: Request):
     }
 
 
-@app.post("add-favorite")
+@app.post("/add-favorite/")
 def add_favorite(request: AddFavoriteInput):
     # Check if the user exists
     if request.email not in users_db:
@@ -379,7 +379,7 @@ def add_favorite(request: AddFavoriteInput):
         "favorites": list(favorites_db[request.email])
     }
 
-@app.get("get-favorites")
+@app.get("/get-favorites/")
 def get_favorites(email: EmailStr):
     # Check if the user exists
     if email not in users_db:
@@ -393,7 +393,7 @@ def get_favorites(email: EmailStr):
         "favorites": list(user_favorites)
     }
 
-@app.delete("remove-favorite")
+@app.delete("/remove-favorite/")
 def remove_favorite(request: AddFavoriteInput):
     # Check if the user exists
     if request.email not in users_db:
@@ -416,7 +416,7 @@ def remove_favorite(request: AddFavoriteInput):
     }
 
 
-@app.post("create-address")
+@app.post("/create-address/")
 def create_address(request: CreateAddressRequest):
     # Validate user
     if request.email not in users_db:
@@ -440,7 +440,7 @@ def create_address(request: CreateAddressRequest):
         "addresses": addresses_db[request.email]
     }
 
-@app.get("get-addresses")
+@app.get("/get-addresses/")
 def get_addresses(email: EmailStr):
     # Validate user
     if email not in users_db:
@@ -454,7 +454,7 @@ def get_addresses(email: EmailStr):
         "addresses": user_addresses
     }
 
-@app.delete("delete-address")
+@app.delete("/delete-address/")
 async def delete_address(request: Request):
     body = await request.json()
     email = body.get("email")
@@ -480,7 +480,7 @@ async def delete_address(request: Request):
         "addresses": addresses_db[email]
     }
 
-@app.put("update-address")
+@app.put("/update-address/")
 def update_address(request: UpdateAddressRequest):
     # Validate user
     if request.email not in users_db:
@@ -501,7 +501,7 @@ def update_address(request: UpdateAddressRequest):
     raise HTTPException(status_code=404, detail="Address not found")
 
 
-@app.post("create-order")
+@app.post("/create-order/")
 def create_order(request: CreateOrderRequest):
     # Validate user
     if request.email not in users_db:
@@ -539,7 +539,7 @@ def create_order(request: CreateOrderRequest):
         "order_status": "confirmed"
     }
 
-@app.get("get-orders")
+@app.get("/get-orders/")
 def get_orders(email: EmailStr):
     # Validate user
     if email not in users_db:
@@ -553,7 +553,7 @@ def get_orders(email: EmailStr):
         "orders": user_orders
     }
 
-@app.post("cancel-order")
+@app.post("/cancel-order/")
 def cancel_order(request: CancelOrderRequest):
     # Validate user
     if request.email not in users_db:
@@ -576,4 +576,4 @@ def cancel_order(request: CancelOrderRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run('app:app', port=8888, reload=True)    
+    uvicorn.run('app:app', port=9892, reload=True)    
