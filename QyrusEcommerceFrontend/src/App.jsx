@@ -14,6 +14,7 @@ import MyAddress from "./components/MyAddress";
 import AddressSelection from "./components/BuyNow";
 import PaymentPage from "./components/PaymentsPage";
 import MyOrders from "./components/MyOrders";
+import ComparePage from "./components/ComparePage";
 
 
 const App = () => {
@@ -33,7 +34,7 @@ const App = () => {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/my-address" element={<MyAddress />} />
-
+        <Route path="/compare" element={<ComparePage />} />
         <Route path="/buy-now" element={<AddressSelection />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/my-orders" element={<MyOrders />} />
