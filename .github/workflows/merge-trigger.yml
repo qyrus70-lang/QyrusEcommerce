@@ -57,7 +57,7 @@ jobs:
       # Step 4: Send Changes and Commit Details to API
       - name: Send changes to API
         env:
-          API_URL: https://testui-qyrusbot.quinnox.info/flux/analyze-test-impact/
+          API_URL: https://testui-qyrusbot.quinnox.info/fluxdev/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: main
           COMMIT_IDS: ${{ env.commits }}
