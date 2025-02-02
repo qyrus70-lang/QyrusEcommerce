@@ -7,28 +7,15 @@ Demo Ecommerce application which has most of the features of ecommerce other tha
 Frontend:
 clone the repo and go the directory
 ```
+> cd QyrusEcommerceFrontend
 > npm i
 > npm run dev
 ```
 
-Create redis streams and store using docker compose
-
-```
-> cd redis
->sudo docker compose up
-```
-
 Backend:
 ```
-cd CodeFluxProducer
-python app.py
-
-cd CodeFluxConsumer
+cd QyrusEcommerceBackend
 python app.py
 ```
 
 
-
-----
-
-## RUN VIA DOCKER
