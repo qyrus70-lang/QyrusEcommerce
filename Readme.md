@@ -18,4 +18,7 @@ cd QyrusEcommerceBackend
 python app.py
 ```
 
+## Test:
+Open the browser with the url http://localhost:5173
+
 
