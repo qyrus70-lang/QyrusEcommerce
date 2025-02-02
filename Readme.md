@@ -10,6 +10,7 @@ clone the repo and go the directory
 > npm i
 > npm run dev
 ```
+
 Create redis streams and store using docker compose
 
 ```
