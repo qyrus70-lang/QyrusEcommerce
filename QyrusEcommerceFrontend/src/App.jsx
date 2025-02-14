@@ -15,6 +15,7 @@ import AddressSelection from "./components/BuyNow";
 import PaymentPage from "./components/PaymentsPage";
 import MyOrders from "./components/MyOrders";
 import ComparePage from "./components/ComparePage";
+import TermsAndConditions from "./components/TermsAndConditions";
 
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/products" element={<Products />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<Navigate to="/products" replace />} />
