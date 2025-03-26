@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - client  # Replace with the branch you want to monitor
+    paths:
+      - 'QyrusEcommerceFrontend/**'
 
 jobs:
   send_code_changes:
