@@ -58,17 +58,18 @@ public class OrderService {
     }
 
     @Transactional
-    public Order cancelOrder(String email, String orderId) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Order order = orderRepository.findByIdAndUser(orderId, user)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if ("cancelled".equals(order.getStatus())) {
-            throw new RuntimeException("Order is already cancelled");
+    public Order cancelOrder(String orderId, String email) {
+        // First find the order
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+        
+        // Check if the order belongs to the user with the given email
+        // This is a more lenient approach that doesn't require finding the user first
+        if (!order.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Order does not belong to user with email: " + email);
         }
-
+        
+        // Update the order status
         order.setStatus("cancelled");
         return orderRepository.save(order);
     }
