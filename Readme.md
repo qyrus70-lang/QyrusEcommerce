@@ -1,7 +1,7 @@
 # QYRUS ECOMMERCE
 
 ----
-Demo Ecommerce application which is a ecommerce sandbox without integration with payment gateway. This is a mono repo consisting of python backend and react frontend.
+Demo Ecommerce application which is a ecommerce sandbox without integration with payment gateway. This is a mono repo consisting of python and java backend and react frontend.
 
 ## Features:
 ✅ Signup, Login and Forgot Password
