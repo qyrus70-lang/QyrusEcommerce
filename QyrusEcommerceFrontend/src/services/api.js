@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://testui-qyrusbot.quinnox.info/qart', // Change this to your API base URL
+  baseURL: 'https://testui-qyrusbot.quinnox.info/qart-java', // Change this to your API base URL
   headers: {
     'Content-Type': 'application/json'
   }
