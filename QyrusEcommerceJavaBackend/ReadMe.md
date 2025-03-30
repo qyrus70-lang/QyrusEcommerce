@@ -1,4 +1,4 @@
-This document shows How to setup in java
+This document shows How to setup the java backend for the Qart app
 
 # How to setup
 
