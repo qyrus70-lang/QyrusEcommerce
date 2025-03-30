@@ -44,6 +44,7 @@ public class User {
 
     public String getResetOtp() {
         return resetOtp;
+        // sample comment
     }
 
     public void setResetOtp(String resetOtp) {

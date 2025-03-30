@@ -35,6 +35,8 @@ public class AuthService {
         // 1. Store the token in the database
         // 2. Set an expiration time
         // 3. Send an email with the reset link
+
+        // Sample comment
         
         // For this implementation, we'll just return the token
         return token;
