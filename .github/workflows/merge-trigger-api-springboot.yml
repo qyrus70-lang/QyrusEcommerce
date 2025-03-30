@@ -80,5 +80,5 @@ jobs:
           
           # Send the payload to the API
           curl -X POST -H "Content-Type: application/json" \
-          -H "Authorization: Bearer $GH_TOKEN" \
+          -H "Authorization: $GH_TOKEN" \
             -d "$PAYLOAD" $API_URL
