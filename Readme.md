@@ -24,13 +24,22 @@ clone the repo and go the directory
 > npm run dev
 ```
 
-Backend:
+Backend is available in Java and Python
+Python Backend:
 ```
 cd QyrusEcommerceBackend
 python app.py
 ```
 
+Java Backend:
+```
+cd QyrusEcommerceJavaBackend
+mvn clean package
+mvn spring-boot:run
+```
+
 ## Test:
 Open the browser with the url http://localhost:5173
+
 
 
