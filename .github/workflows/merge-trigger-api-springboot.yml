@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Ensure full history is fetched
+          token: ${{ secrets.GH_TOKEN }}
 
       # Step 2: Extract Commit Details
       - name: Extract Commit Details
@@ -64,6 +65,7 @@ jobs:
           BRANCH_NAME: main
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           # Construct the JSON payload
           PAYLOAD=$(jq -n \
@@ -78,4 +80,5 @@ jobs:
           
           # Send the payload to the API
           curl -X POST -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $GH_TOKEN" \
             -d "$PAYLOAD" $API_URL
