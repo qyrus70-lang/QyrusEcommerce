@@ -16,7 +16,7 @@ Demo Ecommerce application which is a ecommerce sandbox without integration with
 ✅ Review and Ratings
 
 ## Local Setup:
-Frontend:
+**Frontend**:
 clone the repo and go the directory
 ```
 > cd QyrusEcommerceFrontend
@@ -25,13 +25,13 @@ clone the repo and go the directory
 ```
 
 Backend is available in Java and Python
-Python Backend:
+**Python Backend**:
 ```
 cd QyrusEcommerceBackend
 python app.py
 ```
 
-Java Backend:
+**Java Backend**:
 ```
 cd QyrusEcommerceJavaBackend
 mvn clean package
