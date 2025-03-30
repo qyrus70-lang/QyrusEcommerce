@@ -7,6 +7,7 @@ cd docs/dockerfiles/mysql
 docker-compose up
 ```
 
+**Note**: Configure mysql port in properties file
 ### Populate the Database
 ```
 cd docs
