@@ -19,7 +19,7 @@ public class Product {
     private String category;
     private String subcategory;
     private String description;
-    private Double rating;
+    private Integer rating;
     
     @ElementCollection
     private Set<String> sizes;
@@ -29,7 +29,8 @@ public class Product {
     private List<Color> colors;
     
     @ElementCollection
-    private Set<String> providers;
+    @Column(name = "providers")
+    private Set<String> distributors;
     
     @ElementCollection
     private List<String> comments;

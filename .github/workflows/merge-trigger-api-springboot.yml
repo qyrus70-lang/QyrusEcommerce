@@ -3,7 +3,7 @@ name: Send Code Changes on Push
 on:
   push:
     branches:
-      - java_backend  # Replace with the branch you want to monitor
+      - java_backend_testing_commits  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
 
