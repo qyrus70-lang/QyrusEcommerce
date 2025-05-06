@@ -8,8 +8,8 @@ import javax.validation.constraints.Email;
 public class AddressRequest {
     @NotNull(message = "Email is required")
     @Email(message = "Invalid email format")
-    private String email;
+    private String user_email;
     
     @NotNull(message = "Address is required")
-    private String address;
+    private String user_address;
 } 
