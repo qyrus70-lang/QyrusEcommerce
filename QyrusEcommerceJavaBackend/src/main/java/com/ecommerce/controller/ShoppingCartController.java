@@ -19,7 +19,7 @@ import java.util.Map;
 public class ShoppingCartController {
     private final CartService cartService;
 
-    @GetMapping("/get-cart")
+    @GetMapping("/get-cart/")
     public ResponseEntity<Map<String, Object>> getCart(@RequestParam String email) {
         log.info("Fetching cart for user: {}", email);
         List<CartItemResponse> cart = cartService.getCartItems(email);
@@ -30,7 +30,7 @@ public class ShoppingCartController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/add-to-cart")
+    @PostMapping("/add-to-cart/")
     public ResponseEntity<Map<String, Object>> addToCart(@RequestBody AddToCartRequest request) {
         log.info("Adding item to cart: {}", request);
         
@@ -55,7 +55,7 @@ public class ShoppingCartController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/remove-from-cart")
+    @DeleteMapping("/remove-from-cart/")
     public ResponseEntity<Map<String, Object>> removeFromCart(@RequestBody RemoveFromCartRequest request) {
         if (request == null || request.getEmail() == null || request.getCartItemId() == null) {
             throw new IllegalArgumentException("Email and cartItemId are required");

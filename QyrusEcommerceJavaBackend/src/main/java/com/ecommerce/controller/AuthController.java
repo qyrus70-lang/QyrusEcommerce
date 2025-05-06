@@ -23,7 +23,7 @@ public class AuthController {
     private final AuthService authService;
     private static final Logger log = Logger.getLogger(AuthController.class.getName());
 
-    @PostMapping("/login")
+    @PostMapping("/login/")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest request) {
         userService.login(request);
         Map<String, String> response = new HashMap<>();
@@ -31,7 +31,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/signup/")
     public ResponseEntity<Map<String, Object>> signup(@Valid @RequestBody SignupRequest request) {
         String token = userService.signup(request);
         Map<String, Object> response = new HashMap<>();
@@ -40,7 +40,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/verify-email")
+    @PostMapping("/verify-email/")
     public ResponseEntity<Map<String, String>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         userService.verifyEmail(request.getToken(), request.getOtp());
         Map<String, String> response = new HashMap<>();
@@ -48,7 +48,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/forgot-password")
+    @PostMapping("/forgot-password/")
     public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> requestMap) {
         String email = requestMap.get("email");
         
@@ -61,7 +61,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/reset-password")
+    @PostMapping("/reset-password/")
     public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> requestMap) {
         String password = requestMap.get("password");
         String otp = requestMap.get("otp");

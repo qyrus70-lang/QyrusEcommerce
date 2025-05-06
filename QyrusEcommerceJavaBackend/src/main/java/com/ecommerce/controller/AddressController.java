@@ -18,7 +18,7 @@ import java.util.Map;
 public class AddressController {
     private final AddressService addressService;
 
-    @PostMapping("/create-address")
+    @PostMapping("/create-address/")
     public ResponseEntity<Map<String, Object>> createAddress(@RequestBody AddressRequest request) {
         log.info("Creating address for user: {}", request.getEmail());
         

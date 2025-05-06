@@ -17,7 +17,7 @@ public class ContactController {
 
     private final ContactService contactService;
 
-    @PostMapping("/record-contact")
+    @PostMapping("/record-contact/")
     public ResponseEntity<Map<String, String>> recordContact(@RequestBody Map<String, String> requestMap) {
         String email = requestMap.get("email");
         String comments = requestMap.get("comments");

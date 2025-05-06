@@ -19,7 +19,7 @@ public class ProductCategoryController {
     @Autowired
     private ProductCategoryService productCategoryService;
 
-    @GetMapping("/get-product-categories")
+    @GetMapping("/get-product-categories/")
     public ResponseEntity<Map<String, Map<String, List<String>>>> getProductCategories() {
         List<ProductCategory> categories = productCategoryService.getAllCategories();
         

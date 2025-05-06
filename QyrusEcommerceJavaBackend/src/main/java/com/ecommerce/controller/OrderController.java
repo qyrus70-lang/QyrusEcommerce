@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 public class OrderController {
     private final OrderService orderService;
 
-    @PostMapping("/create-order")
+    @PostMapping("/create-order/")
     public ResponseEntity<Map<String, Object>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         Order order = orderService.createOrder(request);
         
@@ -29,7 +29,7 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/get-orders")
+    @GetMapping("/get-orders/")
     public ResponseEntity<Map<String, Object>> getOrders(@RequestParam String email) {
         List<Order> orders = orderService.getOrders(email);
         
@@ -69,7 +69,7 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/cancel-order")
+    @PostMapping("/cancel-order/")
     public ResponseEntity<?> cancelOrder(@RequestBody Map<String, String> request) {
         String orderId = request.get("orderId");
         String email = request.get("email");

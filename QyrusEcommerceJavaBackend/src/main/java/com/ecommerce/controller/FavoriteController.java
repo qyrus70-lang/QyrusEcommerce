@@ -14,7 +14,7 @@ import java.util.Map;
 public class FavoriteController {
     private final FavoriteService favoriteService;
 
-    @PostMapping("/add-favorite")
+    @PostMapping("/add-favorite/")
     public ResponseEntity<Map<String, Object>> addFavorite(
             @RequestParam String email,
             @RequestParam Long productId) {
@@ -27,7 +27,7 @@ public class FavoriteController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/get-favorites")
+    @GetMapping("/get-favorites/")
     public ResponseEntity<Map<String, Object>> getFavorites(@RequestParam String email) {
         List<Long> favorites = favoriteService.getFavorites(email);
         
@@ -37,7 +37,7 @@ public class FavoriteController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/remove-favorite")
+    @DeleteMapping("/remove-favorite/")
     public ResponseEntity<Map<String, Object>> removeFavorite(
             @RequestParam String email,
             @RequestParam Long productId) {

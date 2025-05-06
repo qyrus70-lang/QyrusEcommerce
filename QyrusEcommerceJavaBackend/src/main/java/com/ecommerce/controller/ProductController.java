@@ -16,7 +16,7 @@ import java.util.Map;
 public class ProductController {
     private final ProductService productService;
 
-    @GetMapping("/get-products")
+    @GetMapping("/get-products/")
     public ResponseEntity<Map<String, Object>> getProducts(
             @RequestParam String category,
             @RequestParam(required = false) String subcategory,
@@ -30,7 +30,7 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/search-products")
+    @GetMapping("/search-products/")
     public ResponseEntity<Map<String, Object>> searchProducts(@RequestParam String query) {
         List<Product> products = productService.searchProducts(query);
         Map<String, Object> response = new HashMap<>();
