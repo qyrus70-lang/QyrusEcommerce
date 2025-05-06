@@ -13,27 +13,27 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    private String name;
-    private Double price;
-    private String image;
-    private String category;
-    private String subcategory;
-    private String description;
-    private Integer rating;
+    private String product_name;
+    private Double product_price;
+    private String product_image;
+    private String product_category;
+    private String product_subcategory;
+    private String product_description;
+    private Integer product_rating;
     
     @ElementCollection
-    private Set<String> sizes;
+    private Set<String> product_sizes;
     
     @ElementCollection
     @CollectionTable(name = "product_colors")
-    private List<Color> colors;
+    private List<Color> product_colors;
     
     @ElementCollection
     @Column(name = "providers")
-    private Set<String> distributors;
+    private Set<String> product_distributors;
     
     @ElementCollection
-    private List<String> comments;
+    private List<String> product_comments;
 }
 
 @Embeddable
