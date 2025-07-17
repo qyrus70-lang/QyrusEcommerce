@@ -45,6 +45,8 @@ public class AddToCartRequest {
     private BigDecimal appliedDiscountPercentage;
     
     // Gift and customization properties
+    @JsonProperty("is_gift")
+    private boolean isGift = false;
     
     @JsonProperty("gift_message")
     @Size(max = 500, message = "Gift message cannot exceed 500 characters")
