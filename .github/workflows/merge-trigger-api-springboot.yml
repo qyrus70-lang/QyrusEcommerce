@@ -62,7 +62,7 @@ jobs:
         env:
           API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
-          BRANCH_NAME: main
+          BRANCH_NAME: detail_deps
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
