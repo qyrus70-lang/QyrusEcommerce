@@ -261,8 +261,8 @@ public class AddressController {
         List<AddressResponse> addresses = addressService.getAddresses(email);
         
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Address updated successfully");
-        response.put("addresses", addresses);
+        // response.put("message", "Address updated successfully");
+        // response.put("addresses", addresses);
         return ResponseEntity.ok(response);
     }
 } 
