@@ -31,13 +31,10 @@ public class ProductController {
     }
 
     @GetMapping("/search-products/")
-    public ResponseEntity<Map<String, Object>> searchProducts(
-            @RequestParam String query,
-            @RequestParam int page) {
-        Page<Product> productPage = productService.searchProducts(query, page);
+    public ResponseEntity<Map<String, Object>> searchProducts(@RequestParam String query) {
+        List<Product> products = productService.searchProducts(query);
         Map<String, Object> response = new HashMap<>();
-        response.put("products", productPage.getContent());
-        response.put("total_pages", productPage.getTotalPages());
+        response.put("products", products);
         return ResponseEntity.ok(response);
     }
 
