@@ -6,7 +6,12 @@ on:
       - detail_deps  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
-
+  pull_request:
+    branches:
+      - detail_deps  # Replace with the branch you want to monitor
+    paths:
+      - 'QyrusEcommerceJavaBackend/**'
+    
 jobs:
   send_code_changes:
     runs-on: ubuntu-latest
