@@ -72,6 +72,11 @@ jobs:
           ENCODED_CHANGES: ${{ env.encoded_changes }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           JOB_ID: ${{ secrets.JOB_ID }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          WORKSPACE_NAME: ${{ secrets.WORKSPACE_NAME }}
+          SUITE_NAME: ${{ secrets.SUITE_NAME }}
+          ENVIRONMENT_NAME: ${{ secrets.ENVIRONMENT_NAME }}
         run: |
           # Construct the JSON payload
           PAYLOAD=$(jq -n \
@@ -80,11 +85,16 @@ jobs:
             --arg commits "$COMMIT_IDS" \
             --arg changes "$ENCODED_CHANGES" \
             --arg job_id "$JOB_ID" \
-            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "job_id": $job_id}')
+            --arg username "$USERNAME" \
+            --arg password "$PASSWORD" \
+            --arg workspace_name "$WORKSPACE_NAME" \
+            --arg suite_name "$SUITE_NAME" \
+            --arg environment_name "$ENVIRONMENT_NAME" \
+            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "job_id": $job_id, "username": $username, "password": $password, "workspace_name": $workspace_name, "suite_name": $suite_name, "environment_name": $environment_name}')
           
           # Debug the payload (optional)
           echo "Payload: $PAYLOAD"
           
           # Send the payload to the API
           curl -X POST -H "Content-Type: application/json" -H "Authorization: $GH_TOKEN" \
-            -d "$PAYLOAD" $API_URL 
+            -d "$PAYLOAD" $API_URL
