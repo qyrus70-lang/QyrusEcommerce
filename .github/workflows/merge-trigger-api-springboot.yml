@@ -3,12 +3,12 @@ name: Send Code Changes on Push
 on:
   push:
     branches:
-      - detail_deps  # Replace with the branch you want to monitor
+      - QAPI_seer  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
   pull_request:
     branches:
-      - detail_deps  # Replace with the branch you want to monitor
+      - QAPI_seer  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
     
@@ -67,11 +67,10 @@ jobs:
         env:
           API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot-dev/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
-          BRANCH_NAME: detail_deps
+          BRANCH_NAME: QAPI_seer
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          JOB_ID: ${{ secrets.JOB_ID }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
           WORKSPACE_NAME: ${{ secrets.WORKSPACE_NAME }}
@@ -84,13 +83,12 @@ jobs:
             --arg branch "$BRANCH_NAME" \
             --arg commits "$COMMIT_IDS" \
             --arg changes "$ENCODED_CHANGES" \
-            --arg job_id "$JOB_ID" \
             --arg username "$USERNAME" \
             --arg password "$PASSWORD" \
             --arg workspace_name "$WORKSPACE_NAME" \
             --arg suite_name "$SUITE_NAME" \
             --arg environment_name "$ENVIRONMENT_NAME" \
-            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "job_id": $job_id, "username": $username, "password": $password, "workspace_name": $workspace_name, "suite_name": $suite_name, "environment_name": $environment_name}')
+            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "username": $username, "password": $password, "workspace_name": $workspace_name, "suite_name": $suite_name, "environment_name": $environment_name}')
           
           # Debug the payload (optional)
           echo "Payload: $PAYLOAD"
