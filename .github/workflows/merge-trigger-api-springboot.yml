@@ -65,7 +65,7 @@ jobs:
       # Step 4: Send Changes and Commit Details to API
       - name: Send changes to API
         env:
-          API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot-dev/analyze-test-impact/
+          API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: QAPI_seer2
           COMMIT_IDS: ${{ env.commits }}
