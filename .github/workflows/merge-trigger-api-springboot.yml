@@ -3,12 +3,12 @@ name: Send Code Changes on Push
 on:
   push:
     branches:
-      - QAPI_seer2  # Replace with the branch you want to monitor
+      - feature/QAPI  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
   pull_request:
     branches:
-      - QAPI_seer2  # Replace with the branch you want to monitor
+      - feature/QAPI  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
     
@@ -67,7 +67,7 @@ jobs:
         env:
           API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
-          BRANCH_NAME: QAPI_seer2
+          BRANCH_NAME: feature/QAPI
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
