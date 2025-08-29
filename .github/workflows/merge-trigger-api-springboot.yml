@@ -6,11 +6,7 @@ on:
       - feature/QAPI  # Replace with the branch you want to monitor
     paths:
       - 'QyrusEcommerceJavaBackend/**'
-  pull_request:
-    branches:
-      - feature/QAPI  # Replace with the branch you want to monitor
-    paths:
-      - 'QyrusEcommerceJavaBackend/**'
+
     
 jobs:
   send_code_changes:
