@@ -1,14 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, Header, HTTPException, Depends, Query
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Dict, List
 import uuid
 import uvicorn
 import traceback
+from fastapi import status
+import random
 from product_db import products_db, product_categories
 from collections import defaultdict
 app = FastAPI()
@@ -105,6 +107,144 @@ class UpdateAccountDetailsRequest(BaseModel):
     phone: str
     age: int
     country: str
+
+
+
+USERS: Dict[str, Dict] = {
+    "alice":  {"password": "wonderland", "full_name": "Alice Liddell", "role": "admin"},
+    "bob":    {"password": "builder",    "full_name": "Bob Builder",   "role": "user"},
+    "charlie":{"password": "chocolate",  "full_name": "Charlie Bucket","role": "viewer"},
+}
+
+# Store issued tokens with their info (simulating JWT payload)
+ISSUED_TOKENS: Dict[str, Dict] = {}
+
+# ──────────────────────────────────────────
+#  Pydantic request/response schemas
+# ──────────────────────────────────────────
+class MockLoginRequest(BaseModel):
+    username: str
+    password: str
+
+class MockLoginResponse(BaseModel):
+    token: str
+    user: str
+
+class MockUserInfoResponse(BaseModel):
+    username: str
+    full_name: str
+    role: str
+
+# ──────────────────────────────────────────
+#  Endpoints
+# ──────────────────────────────────────────
+@app.post("/mock-login", response_model=MockLoginResponse, tags=["auth"])
+def login_mock(body: MockLoginRequest):
+    user = USERS.get(body.username)
+    if user is None or body.password != user["password"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Generate a unique token for this login (like JWT does)
+    token = f"tok_{uuid.uuid4().hex[:16]}"
+    
+    # Set token expiry time (60 seconds from now)
+    expiry_time = datetime.utcnow() + timedelta(seconds=60)
+    
+    # Store token info (simulating JWT payload)
+    ISSUED_TOKENS[token] = {
+        "username": body.username,
+        "expires_at": expiry_time,
+        "issued_at": datetime.utcnow()
+    }
+
+    print("ISSUED TOKENS ", ISSUED_TOKENS)
+
+
+    return {"token": token, "user": body.username}
+
+
+class MockUserInfoRequest(BaseModel):
+    access_token: str
+
+@app.post("/mock-user-info/{user}", response_model=MockUserInfoResponse, tags=["users"])
+def mock_get_user_info(
+    user: str,
+    body: MockUserInfoRequest,
+    username: str = Header(..., description="username"),
+    authorization: str = Header(..., description="Bearer <token>"),
+    token: str = Query(..., description="Token as query parameter")
+):
+    if user != username:
+        raise Exception()
+    # Extract tokens from different sources
+    auth_token = authorization.split("Bearer ")[-1]
+    query_token = token.split("Bearer ")[-1]
+    body_token = body.access_token.split("Bearer ")[-1]
+    
+    # Verify all tokens are present and the same
+    if not auth_token or not query_token or not body_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token must be provided in authorization header, query params, and request body",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if all tokens are identical
+    if auth_token != query_token or auth_token != body_token or query_token != body_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="All tokens must be identical",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Use the verified token for further processing
+    verified_token = auth_token
+    
+    # Check if token exists (was issued)
+    if verified_token not in ISSUED_TOKENS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get token info
+    token_info = ISSUED_TOKENS[verified_token]
+    current_time = datetime.utcnow()
+    print("TOKEN INFO ", token_info)
+    # Check if token has expired
+    if current_time > token_info["expires_at"]:
+        # Remove expired token (cleanup)
+        del ISSUED_TOKENS[verified_token]
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Verify the username matches the token (like JWT sub claim)
+    if token_info["username"] != username:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Token does not belong to specified user"
+        )
+
+    user = USERS.get(username)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return {
+        "username": username,
+        "full_name": user["full_name"],
+        "role": user["role"],
+    }
 
 @app.post("/auth/login/")
 def login(request: LoginRequest):
@@ -576,4 +716,10 @@ def cancel_order(request: CancelOrderRequest):
 
 
 if __name__ == "__main__":
+    import json
+    import os
+    api_docs = app.openapi()
+    with open(os.path.join("docs", "openapi.json"), 'w') as fp:
+        json.dump(api_docs, fp)
+    
     uvicorn.run('app:app', port=9892, reload=True)    
