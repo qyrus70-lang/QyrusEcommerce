@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main  # Replace with the branch you want to monitor
+  pull_requst:
+    branches:
+      - main 
 
 jobs:
   send_code_changes:
@@ -57,7 +60,7 @@ jobs:
       # Step 4: Send Changes and Commit Details to API
       - name: Send changes to API
         env:
-          API_URL: https://testui-qyrusbot.quinnox.info/flux/analyze-test-impact/
+          API_URL: https://testui-qyrusbot.qyrus.com/fluxdev/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: main
           COMMIT_IDS: ${{ env.commits }}
