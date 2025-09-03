@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main  # Replace with the branch you want to monitor
-  pull_requst:
+  pull_request:
     branches:
       - main 
 
