@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main  # Replace with the branch you want to monitor
+      - 'QyrusEcommerceFrontend/**'
   pull_request:
     branches:
       - main 
+    paths:
+      - 'QyrusEcommerceFrontend/**'
 
 jobs:
   send_code_changes:
