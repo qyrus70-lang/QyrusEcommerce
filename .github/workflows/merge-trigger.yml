@@ -3,7 +3,15 @@ name: Send Code Changes on Push
 on:
   push:
     branches:
-      - feature/compare_products  # Replace with the branch you want to monitor
+
+      - main  # Replace with the branch you want to monitor
+      - 'QyrusEcommerceFrontend/**'
+  pull_request:
+    branches:
+      - main 
+    paths:
+      - 'QyrusEcommerceFrontend/**'
+
 
 jobs:
   send_code_changes:
@@ -57,7 +65,8 @@ jobs:
       # Step 4: Send Changes and Commit Details to API
       - name: Send changes to API
         env:
-          API_URL: https://testui-qyrusbot.quinnox.info/fluxdev/analyze-test-impact/
+
+          API_URL: https://testui-qyrusbot.qyrus.com/fluxdev/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: main
           COMMIT_IDS: ${{ env.commits }}
