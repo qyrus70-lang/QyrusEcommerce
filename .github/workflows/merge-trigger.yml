@@ -68,6 +68,7 @@ jobs:
           BRANCH_NAME: main
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
+          UNIVERSE_ID: ${{ secrets.UNIVERSE_ID }}
         run: |
           # Construct the JSON payload
           PAYLOAD=$(jq -n \
@@ -75,7 +76,8 @@ jobs:
             --arg branch "$BRANCH_NAME" \
             --arg commits "$COMMIT_IDS" \
             --arg changes "$ENCODED_CHANGES" \
-            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes}')
+            --arg universe "$UNIVERSE_ID" \
+            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "universe_id": $universe}')
           
           # Debug the payload (optional)
           echo "Payload: $PAYLOAD"
@@ -83,3 +85,4 @@ jobs:
           # Send the payload to the API
           curl -X POST -H "Content-Type: application/json" \
             -d "$PAYLOAD" $API_URL
+
