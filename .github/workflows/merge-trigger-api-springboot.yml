@@ -1,0 +1,98 @@
+name: Send Code Changes on Push
+
+on:
+  push:
+    branches:
+      - QAPI_seer2  # Replace with the branch you want to monitor
+    paths:
+      - 'QyrusEcommerceJavaBackend/**'
+  pull_request:
+    branches:
+      - QAPI_seer2  # Replace with the branch you want to monitor
+    paths:
+      - 'QyrusEcommerceJavaBackend/**'
+    
+jobs:
+  send_code_changes:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code with full history
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensure full history is fetched
+          token: ${{ secrets.GH_TOKEN }}
+
+      # Step 2: Extract Commit Details
+      - name: Extract Commit Details
+        id: commits
+        run: |
+          
+          # Calculate the number of commits in the history
+          TOTAL_COMMITS=$(git rev-list --count HEAD)
+
+          # Calculate the number of new commits in the push
+          NEW_COMMITS_COUNT=$(git rev-list --count HEAD^..HEAD)
+
+          # Use the lesser of the total commits in the repo and the number of new commits for the range
+          COMMIT_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+
+          # Get all commit hashes in this push
+          COMMITS=$(git rev-list --reverse HEAD~$COMMIT_RANGE..HEAD)
+          
+          # Format commit details as a JSON array
+          COMMITS_JSON=$(echo "$COMMITS" | jq -R -s -c 'split("\n")[:-1]')
+          
+          echo "commits=$COMMITS_JSON" >> $GITHUB_ENV
+          echo "Commit IDs: $COMMITS_JSON"
+
+      # Step 3: Get Code Changes
+      - name: Get Code Changes
+        id: code_changes
+        run: |
+          # Calculate the cumulative diff for all commits in the push
+          # Use the total count if we're pushing fewer commits than there are in total, otherwise use the new commits count
+          DIFF_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+
+          # Calculate the diff using the determined range
+          git diff HEAD~$DIFF_RANGE HEAD > changes.txt
+
+          # Encode the changes to safely export as an environment variable
+          ENCODED_CHANGES=$(cat changes.txt | jq -Rs .)
+          echo "encoded_changes=$ENCODED_CHANGES" >> $GITHUB_ENV
+
+      # Step 4: Send Changes and Commit Details to API
+      - name: Send changes to API
+        env:
+          API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot/analyze-test-impact/
+          REPO_NAME: ${{ github.repository }}
+          BRANCH_NAME: QAPI_seer2
+          COMMIT_IDS: ${{ env.commits }}
+          ENCODED_CHANGES: ${{ env.encoded_changes }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          WORKSPACE_NAME: ${{ secrets.WORKSPACE_NAME }}
+          SUITE_NAME: ${{ secrets.SUITE_NAME }}
+          ENVIRONMENT_NAME: ${{ secrets.ENVIRONMENT_NAME }}
+        run: |
+          # Construct the JSON payload
+          PAYLOAD=$(jq -n \
+            --arg repo "$REPO_NAME" \
+            --arg branch "$BRANCH_NAME" \
+            --arg commits "$COMMIT_IDS" \
+            --arg changes "$ENCODED_CHANGES" \
+            --arg username "$USERNAME" \
+            --arg password "$PASSWORD" \
+            --arg workspace_name "$WORKSPACE_NAME" \
+            --arg suite_name "$SUITE_NAME" \
+            --arg environment_name "$ENVIRONMENT_NAME" \
+            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "username": $username, "password": $password, "workspace_name": $workspace_name, "suite_name": $suite_name, "environment_name": $environment_name}')
+          
+          # Debug the payload (optional)
+          echo "Payload: $PAYLOAD"
+          
+          # Send the payload to the API
+          curl -X POST -H "Content-Type: application/json" -H "Authorization: $GH_TOKEN" \
+            -d "$PAYLOAD" $API_URL
