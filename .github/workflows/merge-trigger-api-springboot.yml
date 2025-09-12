@@ -61,7 +61,7 @@ jobs:
       # Step 4: Send Changes and Commit Details to API
       - name: Send changes to API
         env:
-          API_URL: https://stg-gateway.qyrus.com:8243/seer-api-java-impact-analyzer-producer/v1/analyze-test-impact/
+          API_URL: https://testui-qyrusbot.quinnox.info/flux-api-java-springboot/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: new-issue-branch
           COMMIT_IDS: ${{ env.commits }}
