@@ -61,7 +61,7 @@ jobs:
       # Step 4: Send Changes and Commit Details to API
       - name: Send changes to API
         env:
-          API_URL: https://testui-qyrusbot.quinnox.info/flux-api-java-springboot/analyze-test-impact/
+          API_URL: https://testui-qyrusbot.qyrus.com/flux-api-java-springboot/analyze-test-impact/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: new-issue-branch
           COMMIT_IDS: ${{ env.commits }}
@@ -90,5 +90,5 @@ jobs:
           echo "Payload: $PAYLOAD"
           
           # Send the payload to the API
-          curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer 90540897-748a-3ef2-b3a3-c6f8f42022da" \
-            -d "$PAYLOAD" https://stg-gateway.qyrus.com:8243/seer-api-java-impact-analyzer-producer/v1/analyze-test-impact/
+          curl -X POST -H "Content-Type: application/json" -H "Authorization: $GH_TOKEN" \
+            -d "$PAYLOAD" $API_URL
