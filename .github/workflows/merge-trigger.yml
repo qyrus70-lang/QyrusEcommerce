@@ -1,10 +1,6 @@
 name: Send Code Changes on Push
 
 on:
-  push:
-    branches:
-      - main  # Replace with the branch you want to monitor
-      - 'QyrusEcommerceFrontend/**'
   pull_request:
     branches:
       - main 
@@ -68,7 +64,14 @@ jobs:
           BRANCH_NAME: main
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
-          UNIVERSE_ID: ${{ secrets.UNIVERSE_ID }}
+          QYRUS_USERNAME: ${{ secrets.QYRUS_USERNAME }}
+          QYRUS_PASSWORD: ${{ secrets.QYRUS_PASSWORD }}
+          QYRUS_TEAM_NAME: ${{ secrets.QYRUS_TEAM }}
+          WEB_PROJECT_NAME: ${{ secrets.WEB_PROJECT_NAME }}
+          WEB_RUN_CONFIGURATION_NAME: ${{ secrets.RUN_CONFIGURATION_NAME }}
+          
+          
+          
         run: |
           # Construct the JSON payload
           PAYLOAD=$(jq -n \
@@ -76,8 +79,22 @@ jobs:
             --arg branch "$BRANCH_NAME" \
             --arg commits "$COMMIT_IDS" \
             --arg changes "$ENCODED_CHANGES" \
-            --arg universe "$UNIVERSE_ID" \
-            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "universe_id": $universe}')
+            --arg qyrus_username "$QYRUS_USERNAME" \
+            --arg qyrus_password "$QYRUS_PASSWORD" \
+            --arg qyrus_team_name "$QYRUS_TEAM_NAME" \
+            --arg web_project_name "$WEB_PROJECT_NAME" \
+            --arg web_run_configuration_name "$WEB_RUN_CONFIGURATION_NAME"
+            '{
+            "repository": $repo, 
+            "branch": $branch, 
+            "commit_ids": $commits, 
+            "changes": $changes, 
+            "qyrus_username": $qyrus_username,
+            "qyrus_password": $qyrus_password,
+            "qyrus_team_name": $qyrus_team_name,
+            "web_project_name": $web_project_name,
+            "web_run_configuration_name": $web_run_configuration_name
+            }')
           
           # Debug the payload (optional)
           echo "Payload: $PAYLOAD"
@@ -85,4 +102,3 @@ jobs:
           # Send the payload to the API
           curl -X POST -H "Content-Type: application/json" \
             -d "$PAYLOAD" $API_URL
-
