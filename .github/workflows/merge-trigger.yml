@@ -3,7 +3,7 @@ name: Send Code Changes on Push
 on:
   pull_request:
     branches:
-      - main 
+      - main
     paths:
       - 'QyrusEcommerceFrontend/**'
 
@@ -16,64 +16,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure full history is fetched
+          fetch-depth: 0
 
-      # Step 2: Extract Commit Details
-      - name: Extract Commit Details
-        id: commits
-        run: |
-          
-          # Calculate the number of commits in the history
-          TOTAL_COMMITS=$(git rev-list --count HEAD)
-
-          # Calculate the number of new commits in the push
-          NEW_COMMITS_COUNT=$(git rev-list --count HEAD^..HEAD)
-
-          # Use the lesser of the total commits in the repo and the number of new commits for the range
-          COMMIT_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
-
-          # Get all commit hashes in this push
-          COMMITS=$(git rev-list --reverse HEAD~$COMMIT_RANGE..HEAD)
-          
-          # Format commit details as a JSON array
-          COMMITS_JSON=$(echo "$COMMITS" | jq -R -s -c 'split("\n")[:-1]')
-          
-          echo "commits=$COMMITS_JSON" >> $GITHUB_ENV
-          echo "Commit IDs: $COMMITS_JSON"
-
-      # Step 3: Get Code Changes
+      # Step 2: Get diff between PR base and head
       - name: Get Code Changes
         id: code_changes
         run: |
-          # Calculate the cumulative diff for all commits in the push
-          # Use the total count if we're pushing fewer commits than there are in total, otherwise use the new commits count
-          DIFF_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+          # Get base and head from the PR event
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.sha }}
 
-          # Calculate the diff using the determined range
-          git diff HEAD~$DIFF_RANGE HEAD > changes.txt
+          # Generate diff
+          git diff $BASE_SHA $HEAD_SHA > changes.txt
 
-          # Encode the changes to safely export as an environment variable
-          ENCODED_CHANGES=$(cat changes.txt | jq -Rs .)
+          # Encode diff safely for JSON
+          ENCODED_CHANGES=$(jq -Rs . < changes.txt)
           echo "encoded_changes=$ENCODED_CHANGES" >> $GITHUB_ENV
 
-      # Step 4: Send Changes and Commit Details to API
+      # Step 3: Send Changes to API
       - name: Send changes to API
         env:
           API_URL: https://testui-qyrusbot.qyrus.com/fluxdev/analyze-test-impact-agent/
           REPO_NAME: ${{ github.repository }}
-          BRANCH_NAME: main
-          COMMIT_IDS: ${{ env.commits }}
+          BRANCH_NAME: ${{ github.head_ref }}
+          COMMIT_IDS: ${{ github.event.pull_request.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
           QYRUS_USERNAME: ${{ secrets.QYRUS_USERNAME }}
           QYRUS_PASSWORD: ${{ secrets.QYRUS_PASSWORD }}
           QYRUS_TEAM_NAME: ${{ secrets.QYRUS_TEAM }}
           WEB_PROJECT_NAME: ${{ secrets.WEB_PROJECT_NAME }}
           WEB_RUN_CONFIGURATION_NAME: ${{ secrets.RUN_CONFIGURATION_NAME }}
-          
-          
-          
         run: |
-          # Construct the JSON payload
           PAYLOAD=$(jq -n \
             --arg repo "$REPO_NAME" \
             --arg branch "$BRANCH_NAME" \
@@ -83,22 +56,20 @@ jobs:
             --arg qyrus_password "$QYRUS_PASSWORD" \
             --arg qyrus_team_name "$QYRUS_TEAM_NAME" \
             --arg web_project_name "$WEB_PROJECT_NAME" \
-            --arg web_run_configuration_name "$WEB_RUN_CONFIGURATION_NAME"
+            --arg web_run_configuration_name "$WEB_RUN_CONFIGURATION_NAME" \
             '{
-            "repository": $repo, 
-            "branch": $branch, 
-            "commit_ids": $commits, 
-            "changes": $changes, 
-            "qyrus_username": $qyrus_username,
-            "qyrus_password": $qyrus_password,
-            "qyrus_team_name": $qyrus_team_name,
-            "web_project_name": $web_project_name,
-            "web_run_configuration_name": $web_run_configuration_name
+              repository: $repo,
+              branch: $branch,
+              commit_ids: $commits,
+              changes: $changes,
+              qyrus_username: $qyrus_username,
+              qyrus_password: $qyrus_password,
+              qyrus_team_name: $qyrus_team_name,
+              web_project_name: $web_project_name,
+              web_run_configuration_name: $web_run_configuration_name
             }')
-          
-          # Debug the payload (optional)
+
           echo "Payload: $PAYLOAD"
-          
-          # Send the payload to the API
+
           curl -X POST -H "Content-Type: application/json" \
             -d "$PAYLOAD" $API_URL
