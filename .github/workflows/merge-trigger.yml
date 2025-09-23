@@ -46,6 +46,7 @@ jobs:
           QYRUS_TEAM_NAME: ${{ secrets.QYRUS_TEAM }}
           WEB_PROJECT_NAME: ${{ secrets.WEB_PROJECT_NAME }}
           WEB_RUN_CONFIGURATION_NAME: ${{ secrets.RUN_CONFIGURATION_NAME }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           PAYLOAD=$(jq -n \
             --arg repo "$REPO_NAME" \
@@ -71,5 +72,5 @@ jobs:
 
           echo "Payload: $PAYLOAD"
 
-          curl -X POST -H "Content-Type: application/json" \
+          curl -X POST -H "Authorization: $GH_TOKEN" -H "Content-Type: application/json" \
             -d "$PAYLOAD" $API_URL
