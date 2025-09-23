@@ -36,7 +36,7 @@ jobs:
       # Step 3: Send Changes to API
       - name: Send changes to API
         env:
-          API_URL: https://testui-qyrusbot.qyrus.com/fluxdev/analyze-test-impact-agent/
+          API_URL: https://uninfected-tamiko-subhorizontally.ngrok-free.dev/analyze-test-impact-agent/
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: ${{ github.head_ref }}
           COMMIT_IDS: ${{ github.event.pull_request.commits }}
