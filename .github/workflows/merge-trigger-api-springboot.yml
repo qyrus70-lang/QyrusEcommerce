@@ -17,18 +17,17 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Common, non-secret env
       MONITORED_PATH: QyrusEcommerceJavaBackend
 
     steps:
-      # 1) Checkout with full history (needed to compute ranges)
+      # 1) Checkout with full history
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
-      # 2) Compute commit range and commit list for this event
+      # 2) Compute commit range
       - name: Compute commit range & list
         id: range
         shell: bash
@@ -39,7 +38,6 @@ jobs:
             FROM_SHA="${{ github.event.pull_request.base.sha }}"
             TO_SHA="${{ github.event.pull_request.head.sha }}"
           else
-            # push
             FROM_SHA="${{ github.event.before }}"
             TO_SHA="${{ github.sha }}"
           fi
@@ -47,29 +45,21 @@ jobs:
           echo "FROM_SHA=$FROM_SHA" >> $GITHUB_ENV
           echo "TO_SHA=$TO_SHA" >> $GITHUB_ENV
 
-          # Prepare a reverse-ordered list of commits in the range (oldest -> newest)
           COMMITS=$(git rev-list --reverse "${FROM_SHA}..${TO_SHA}")
-          # As a JSON array (e.g., ["abc","def",...])
           COMMITS_JSON=$(printf "%s\n" "$COMMITS" | jq -R -s -c 'split("\n")[:-1]')
-
           echo "commits=$COMMITS_JSON" >> $GITHUB_ENV
-          echo "Commit IDs: $COMMITS_JSON"
 
-      # 3) Get cumulative diff across the range (restricted to monitored path)
+      # 3) Get code diff
       - name: Get code changes (diff)
         id: diff
         shell: bash
         run: |
           set -euo pipefail
-          # Only diff within the monitored path
           git diff "${FROM_SHA}..${TO_SHA}" -- "${MONITORED_PATH}" > changes.txt || true
-
-          # Encode safely as JSON string
           ENCODED_CHANGES=$(jq -Rs . < changes.txt)
           echo "encoded_changes=$ENCODED_CHANGES" >> $GITHUB_ENV
-          echo "Size of diff (bytes): $(wc -c < changes.txt)"
 
-      # 4) Authenticate with the correct gateway to obtain gatewayUrl + gatewayToken
+      # 4) Get Gateway Token dynamically (now uses APP_URL secret)
       - name: Get gateway token
         id: gateway
         shell: bash
@@ -78,49 +68,44 @@ jobs:
           AUTH_GATEWAY_TOKEN: ${{ secrets.AUTH_GATEWAY_TOKEN }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          APP_URL: ${{ secrets.APP_URL }}
         run: |
           set -euo pipefail
 
           ENV_LOWER="$(echo "${QAPI_ENVIRONMENT:-}" | tr '[:upper:]' '[:lower:]')"
           if [[ "$ENV_LOWER" == "staging" ]]; then
             AUTH_URL="https://stg-gateway.qyrus.com:8243/authentication/v1/api/get-access-token"
-            APP_URL="https://stg.qyrus.com"
           else
             AUTH_URL="https://gateway-uk.qyrus.com/authentication/v1/api/get-access-token"
-            APP_URL="https://app.qyrus.com"
           fi
 
-          # Build auth body
+          # Build auth body using APP_URL from secrets
           AUTH_BODY=$(jq -n \
             --arg applicationUrl "$APP_URL" \
             --arg email "$USERNAME" \
             --arg password "$PASSWORD" \
             '{applicationUrl:$applicationUrl, email:$email, password:$password, isSSO:false}')
 
-          # Call auth API
+          # Call authentication API
           AUTH_RESP=$(curl -sS -X POST "$AUTH_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: ${AUTH_GATEWAY_TOKEN}" \
             -d "$AUTH_BODY")
 
-          # Extract fields
           GATEWAY_URL=$(echo "$AUTH_RESP" | jq -r '.gatewayUrl // empty')
           GATEWAY_TOKEN=$(echo "$AUTH_RESP" | jq -r '.gatewayToken // empty')
 
           if [[ -z "$GATEWAY_URL" || -z "$GATEWAY_TOKEN" ]]; then
-            echo "Auth response did not contain gatewayUrl/gatewayToken."
-            echo "Auth response (redacted token): $(echo "$AUTH_RESP" | jq 'del(.gatewayToken)')"  # safe to show
+            echo "❌ Missing gatewayUrl/gatewayToken in response."
+            echo "$AUTH_RESP" | jq 'del(.gatewayToken)'
             exit 1
           fi
 
-          # Persist for later steps
           echo "gateway_url=$GATEWAY_URL" >> $GITHUB_ENV
           echo "gateway_token=$GATEWAY_TOKEN" >> $GITHUB_ENV
+          echo "✅ Gateway authentication successful"
 
-          # Minimal log (no secrets)
-          echo "Gateway URL acquired."
-
-      # 5) Send payload to analyze-test-impact using the obtained gateway
+      # 5) Send diff and metadata to Impact Analyzer
       - name: Send changes to Analyze API
         shell: bash
         env:
@@ -137,8 +122,6 @@ jobs:
           GATEWAY_TOKEN: ${{ env.gateway_token }}
         run: |
           set -euo pipefail
-
-          # Normalize gateway URL (strip trailing slash if any)
           BASE="${GATEWAY_URL%/}"
           ANALYZE_URL="${BASE}/seer-api-java-impact-analyzer-producer/v1/analyze-test-impact/"
 
@@ -164,22 +147,18 @@ jobs:
               environment_name: $environment_name
             }')
 
-          echo "Posting analyze request to: ${ANALYZE_URL}"
-          # Do not echo payload (contains secrets). Log a redacted preview instead:
-          echo "Payload keys: $(echo "$PAYLOAD" | jq -r 'keys | join(", ")')"
-
+          echo "Posting to $ANALYZE_URL"
           HTTP_CODE=$(curl -sS -o response.json -w "%{http_code}" \
             -X POST "$ANALYZE_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${GATEWAY_TOKEN}" \
             -d "$PAYLOAD")
 
-          echo "Analyze API HTTP status: $HTTP_CODE"
+          echo "Response Code: $HTTP_CODE"
           if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
-            echo "Analyze API error body:"
-            cat response.json || true
+            echo "❌ Error Response:"
+            cat response.json
             exit 1
           fi
 
-          echo "Analyze API success. Response snippet:"
-          cat response.json | jq 'del(.sensitive, .credentials)' | head -c 200 || true
+          echo "✅ Successfully sent changes"
