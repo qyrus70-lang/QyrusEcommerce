@@ -138,8 +138,8 @@ jobs:
             '{
               repository: $repo,
               branch: $branch,
-              commit_ids: ($commits | fromjson),
-              changes: ($changes | fromjson),
+              commit_ids: $commits,
+              changes: $changes,
               username: $username,
               password: $password,
               workspace_name: $workspace_name,
