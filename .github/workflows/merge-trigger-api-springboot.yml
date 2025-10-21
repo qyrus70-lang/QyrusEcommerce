@@ -3,81 +3,145 @@ name: Send Code Changes on Push
 on:
   push:
     branches:
-      - QAPI_seer_stg  # Replace with the branch you want to monitor
+      - QAPI_seer_stg
     paths:
       - 'QyrusEcommerceJavaBackend/**'
   pull_request:
     branches:
-      - QAPI_seer_stg  # Replace with the branch you want to monitor
+      - QAPI_seer_stg
     paths:
       - 'QyrusEcommerceJavaBackend/**'
-    
+
 jobs:
   send_code_changes:
     runs-on: ubuntu-latest
 
+    env:
+      # Common, non-secret env
+      MONITORED_PATH: QyrusEcommerceJavaBackend
+
     steps:
-      # Step 1: Checkout the code with full history
+      # 1) Checkout with full history (needed to compute ranges)
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure full history is fetched
+          fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
-      # Step 2: Extract Commit Details
-      - name: Extract Commit Details
-        id: commits
+      # 2) Compute commit range and commit list for this event
+      - name: Compute commit range & list
+        id: range
+        shell: bash
         run: |
-          
-          # Calculate the number of commits in the history
-          TOTAL_COMMITS=$(git rev-list --count HEAD)
+          set -euo pipefail
 
-          # Calculate the number of new commits in the push
-          NEW_COMMITS_COUNT=$(git rev-list --count HEAD^..HEAD)
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            FROM_SHA="${{ github.event.pull_request.base.sha }}"
+            TO_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            # push
+            FROM_SHA="${{ github.event.before }}"
+            TO_SHA="${{ github.sha }}"
+          fi
 
-          # Use the lesser of the total commits in the repo and the number of new commits for the range
-          COMMIT_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+          echo "FROM_SHA=$FROM_SHA" >> $GITHUB_ENV
+          echo "TO_SHA=$TO_SHA" >> $GITHUB_ENV
 
-          # Get all commit hashes in this push
-          COMMITS=$(git rev-list --reverse HEAD~$COMMIT_RANGE..HEAD)
-          
-          # Format commit details as a JSON array
-          COMMITS_JSON=$(echo "$COMMITS" | jq -R -s -c 'split("\n")[:-1]')
-          
+          # Prepare a reverse-ordered list of commits in the range (oldest -> newest)
+          COMMITS=$(git rev-list --reverse "${FROM_SHA}..${TO_SHA}")
+          # As a JSON array (e.g., ["abc","def",...])
+          COMMITS_JSON=$(printf "%s\n" "$COMMITS" | jq -R -s -c 'split("\n")[:-1]')
+
           echo "commits=$COMMITS_JSON" >> $GITHUB_ENV
           echo "Commit IDs: $COMMITS_JSON"
 
-      # Step 3: Get Code Changes
-      - name: Get Code Changes
-        id: code_changes
+      # 3) Get cumulative diff across the range (restricted to monitored path)
+      - name: Get code changes (diff)
+        id: diff
+        shell: bash
         run: |
-          # Calculate the cumulative diff for all commits in the push
-          # Use the total count if we're pushing fewer commits than there are in total, otherwise use the new commits count
-          DIFF_RANGE=$(($TOTAL_COMMITS < $NEW_COMMITS_COUNT ? $TOTAL_COMMITS : $NEW_COMMITS_COUNT))
+          set -euo pipefail
+          # Only diff within the monitored path
+          git diff "${FROM_SHA}..${TO_SHA}" -- "${MONITORED_PATH}" > changes.txt || true
 
-          # Calculate the diff using the determined range
-          git diff HEAD~$DIFF_RANGE HEAD > changes.txt
-
-          # Encode the changes to safely export as an environment variable
-          ENCODED_CHANGES=$(cat changes.txt | jq -Rs .)
+          # Encode safely as JSON string
+          ENCODED_CHANGES=$(jq -Rs . < changes.txt)
           echo "encoded_changes=$ENCODED_CHANGES" >> $GITHUB_ENV
+          echo "Size of diff (bytes): $(wc -c < changes.txt)"
 
-      # Step 4: Send Changes and Commit Details to API
-      - name: Send changes to API
+      # 4) Authenticate with the correct gateway to obtain gatewayUrl + gatewayToken
+      - name: Get gateway token
+        id: gateway
+        shell: bash
         env:
-          API_URL: https://stg-gateway.qyrus.com:8243/seer-api-java-impact-analyzer-producer/v1/analyze-test-impact/
+          QAPI_ENVIRONMENT: ${{ secrets.QAPI_ENVIRONMENT }}
+          AUTH_GATEWAY_TOKEN: ${{ secrets.AUTH_GATEWAY_TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          ENV_LOWER="$(echo "${QAPI_ENVIRONMENT:-}" | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ENV_LOWER" == "staging" ]]; then
+            AUTH_URL="https://stg-gateway.qyrus.com:8243/authentication/v1/api/get-access-token"
+            APP_URL="https://stg.qyrus.com"
+          else
+            AUTH_URL="https://gateway-uk.qyrus.com/authentication/v1/api/get-access-token"
+            APP_URL="https://app.qyrus.com"
+          fi
+
+          # Build auth body
+          AUTH_BODY=$(jq -n \
+            --arg applicationUrl "$APP_URL" \
+            --arg email "$USERNAME" \
+            --arg password "$PASSWORD" \
+            '{applicationUrl:$applicationUrl, email:$email, password:$password, isSSO:false}')
+
+          # Call auth API
+          AUTH_RESP=$(curl -sS -X POST "$AUTH_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: ${AUTH_GATEWAY_TOKEN}" \
+            -d "$AUTH_BODY")
+
+          # Extract fields
+          GATEWAY_URL=$(echo "$AUTH_RESP" | jq -r '.gatewayUrl // empty')
+          GATEWAY_TOKEN=$(echo "$AUTH_RESP" | jq -r '.gatewayToken // empty')
+
+          if [[ -z "$GATEWAY_URL" || -z "$GATEWAY_TOKEN" ]]; then
+            echo "Auth response did not contain gatewayUrl/gatewayToken."
+            echo "Auth response (redacted token): $(echo "$AUTH_RESP" | jq 'del(.gatewayToken)')"  # safe to show
+            exit 1
+          fi
+
+          # Persist for later steps
+          echo "gateway_url=$GATEWAY_URL" >> $GITHUB_ENV
+          echo "gateway_token=$GATEWAY_TOKEN" >> $GITHUB_ENV
+
+          # Minimal log (no secrets)
+          echo "Gateway URL acquired."
+
+      # 5) Send payload to analyze-test-impact using the obtained gateway
+      - name: Send changes to Analyze API
+        shell: bash
+        env:
           REPO_NAME: ${{ github.repository }}
-          BRANCH_NAME: QAPI_seer_stg
+          BRANCH_NAME: ${{ github.ref_name }}
           COMMIT_IDS: ${{ env.commits }}
           ENCODED_CHANGES: ${{ env.encoded_changes }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
           WORKSPACE_NAME: ${{ secrets.WORKSPACE_NAME }}
           SUITE_NAME: ${{ secrets.SUITE_NAME }}
           ENVIRONMENT_NAME: ${{ secrets.ENVIRONMENT_NAME }}
+          GATEWAY_URL: ${{ env.gateway_url }}
+          GATEWAY_TOKEN: ${{ env.gateway_token }}
         run: |
-          # Construct the JSON payload
+          set -euo pipefail
+
+          # Normalize gateway URL (strip trailing slash if any)
+          BASE="${GATEWAY_URL%/}"
+          ANALYZE_URL="${BASE}/seer-api-java-impact-analyzer-producer/v1/analyze-test-impact/"
+
           PAYLOAD=$(jq -n \
             --arg repo "$REPO_NAME" \
             --arg branch "$BRANCH_NAME" \
@@ -88,11 +152,34 @@ jobs:
             --arg workspace_name "$WORKSPACE_NAME" \
             --arg suite_name "$SUITE_NAME" \
             --arg environment_name "$ENVIRONMENT_NAME" \
-            '{"repository": $repo, "branch": $branch, "commit_ids": $commits, "changes": $changes, "username": $username, "password": $password, "workspace_name": $workspace_name, "suite_name": $suite_name, "environment_name": $environment_name}')
-          
-          # Debug the payload (optional)
-          echo "Payload: $PAYLOAD"
-          
-          # Send the payload to the API
-          curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer 90540897-748a-3ef2-b3a3-c6f8f42022da" \
-            -d "$PAYLOAD" https://stg-gateway.qyrus.com:8243/seer-api-java-impact-analyzer-producer/v1/analyze-test-impact
+            '{
+              repository: $repo,
+              branch: $branch,
+              commit_ids: ($commits | fromjson),
+              changes: ($changes | fromjson),
+              username: $username,
+              password: $password,
+              workspace_name: $workspace_name,
+              suite_name: $suite_name,
+              environment_name: $environment_name
+            }')
+
+          echo "Posting analyze request to: ${ANALYZE_URL}"
+          # Do not echo payload (contains secrets). Log a redacted preview instead:
+          echo "Payload keys: $(echo "$PAYLOAD" | jq -r 'keys | join(", ")')"
+
+          HTTP_CODE=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "$ANALYZE_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${GATEWAY_TOKEN}" \
+            -d "$PAYLOAD")
+
+          echo "Analyze API HTTP status: $HTTP_CODE"
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "Analyze API error body:"
+            cat response.json || true
+            exit 1
+          fi
+
+          echo "Analyze API success. Response snippet:"
+          cat response.json | jq 'del(.sensitive, .credentials)' | head -c 200 || true
