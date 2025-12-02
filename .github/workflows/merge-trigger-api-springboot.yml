@@ -79,6 +79,7 @@ jobs:
             AUTH_URL="https://gateway-uk.qyrus.com/authentication/v1/api/get-access-token"
           fi
 
+          echo "APP URL $APP_URL"
           # Build auth body using APP_URL from secrets
           AUTH_BODY=$(jq -n \
             --arg applicationUrl "$APP_URL" \
