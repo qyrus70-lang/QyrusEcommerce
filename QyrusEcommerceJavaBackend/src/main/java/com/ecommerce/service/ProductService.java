@@ -27,9 +27,8 @@ public class ProductService {
         return productRepository.findByCategoryAndSubcategory(category, subcategory, pageRequest);
     }
 
-    public Page<Product> searchProducts(String query, int page) {
-        PageRequest pageRequest = PageRequest.of(page - 1, 15);
-        return productRepository.searchByName(query, pageRequest);
+    public List<Product> searchProducts(String query) {
+        return productRepository.searchByName(query);
     }
 
     public Product getProductDetails(Long productId) {
