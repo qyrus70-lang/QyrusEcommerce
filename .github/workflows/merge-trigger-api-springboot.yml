@@ -120,8 +120,8 @@ jobs:
           WORKSPACE_NAME: ${{ secrets.WORKSPACE_NAME }}
           SUITE_NAME: ${{ secrets.SUITE_NAME }}
           ENVIRONMENT_NAME: ${{ secrets.ENVIRONMENT_NAME }}
-          GATEWAY_URL: ${{ env.gateway_url }}
-          GATEWAY_TOKEN: ${{ env.gateway_token }}
+          GATEWAY_URL: ${{ secrets.gateway_url }}
+          GATEWAY_TOKEN: ${{ secrets.gateway_token }}
         run: |
           set -euo pipefail
           BASE="${GATEWAY_URL%/}"
