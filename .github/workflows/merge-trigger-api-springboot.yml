@@ -92,7 +92,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: ${AUTH_GATEWAY_TOKEN}" \
             -d "$AUTH_BODY")
-
+          echo "$AUTH_RESP"
           GATEWAY_URL=$(echo "$AUTH_RESP" | jq -r '.gatewayUrl // empty')
           GATEWAY_TOKEN=$(echo "$AUTH_RESP" | jq -r '.gatewayToken // empty')
 
