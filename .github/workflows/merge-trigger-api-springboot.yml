@@ -94,5 +94,5 @@ jobs:
           echo "Payload: $PAYLOAD"
           
           # Send the payload to the API
-          curl -X POST -H "Content-Type: application/json" -H "Authorization: $GH_TOKEN" \
+          curl -X POST -H "Content-Type: application/json" -H "Authorization: $GH_TOKEN" -H "GithubToken: $GH_TOKEN" \
             -d "$PAYLOAD" $API_URL
