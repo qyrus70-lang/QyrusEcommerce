@@ -106,6 +106,19 @@ jobs:
       #     echo "gateway_token=$GATEWAY_TOKEN" >> $GITHUB_ENV
       #     echo "✅ Gateway authentication successful"
 
+      # verify GH token
+      - name: Debug GH_TOKEN presence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "❌ GH_TOKEN is EMPTY or not set"
+          else
+            echo "✅ GH_TOKEN is set (non-empty)"
+          fi
+
+    
       # 5) Send diff and metadata to Impact Analyzer
       - name: Send changes to Analyze API
         shell: bash
