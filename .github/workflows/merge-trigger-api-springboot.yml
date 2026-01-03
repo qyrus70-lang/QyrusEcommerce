@@ -167,7 +167,7 @@ jobs:
             -X POST "$ANALYZE_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${GATEWAY_TOKEN}" \
-            -H "github_token: $GH_TOKEN" \
+            -H "github-token: $GH_TOKEN" \
             -d "$PAYLOAD")
 
           echo "Response Code: $HTTP_CODE"
