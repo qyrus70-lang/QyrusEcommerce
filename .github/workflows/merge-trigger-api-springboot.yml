@@ -125,7 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="${GATEWAY_URL%/}"
-          ANALYZE_URL="https://testui-qyrusbot.qyrus.com/seer-common-dev/analyze-test-impact"
+          ANALYZE_URL="https://testui-qyrusbot.qyrus.com/seer-common-dev/analyze-impact"
 
           PAYLOAD=$(jq -n \
             --arg repo "$REPO_NAME" \
